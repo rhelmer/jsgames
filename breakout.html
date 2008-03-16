@@ -160,8 +160,7 @@ function drawRect(obj) {
 function drawBricks() {
   for (var i=0; i < bricks.length; i++) {
     brick = bricks[i];
-    ctx.fillStyle = brick.color;
-    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+    drawRect(brick);
   }
 }
 
