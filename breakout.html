@@ -54,17 +54,14 @@ for (var i=0; i< total_brick_number; i++) {
 
 drawBricks();
 function mainloop() {
-  if (bricks.length == 0) {
-    ball.moving = false;
-  }
-  drawPaddle();
+  drawRect(paddle);
   if (ball.moving == true) {
     moveBall();
   } else {
     ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
     ball.x = paddle.x + paddle.width / 2;
   }
-  drawBall();
+  drawRect(ball);
   collidables = bricks.concat();
   collidables.push(paddle);
   for (var i=0; i < collidables.length; i++) {
@@ -109,6 +106,7 @@ function moveBall() {
       ball.x -= ball.speed;
     } else {
       ball.direction_horizontal = 'right';
+      ball.hitPaddle = false;
     }
   }
   if (ball.direction_horizontal == 'right') {
@@ -116,6 +114,7 @@ function moveBall() {
       ball.x += ball.speed;
     } else {
       ball.direction_horizontal = 'left';
+      ball.hitPaddle = false;
     }
   }
   if (ball.direction_vertical == 'up') {
@@ -123,16 +122,20 @@ function moveBall() {
       ball.y -= ball.speed;
     } else {
       ball.direction_vertical = 'down';
+      ball.hitPaddle = false;
     }
   }
   if (ball.direction_vertical == 'down') {
-    if ((ball.y + ball.width) < canvas.width) {
+    if ((ball.y + ball.height) < canvas.height) {
       ball.y += ball.speed;
     } else {
+      ball.hitPaddle = false;
+      ball.moving = false;
+      ball.x = (canvas.width / 2);
+      ball.y = (canvas.height - 120);
       ball.direction_vertical = 'up';
     }
   }
-  drawBall();
 }
 
 function movePaddle(direction) {
@@ -147,17 +150,11 @@ function movePaddle(direction) {
       paddle.x += paddle.speed;
     }
   }
-  drawPaddle();
 }
 
-function drawPaddle() {
-  ctx.fillStyle = paddle.color;
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-}
-
-function drawBall() {
-  ctx.fillStyle = ball.color;
-  ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+function drawRect(obj) {
+  ctx.fillStyle = obj.color;
+  ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
 }
 
 function drawBricks() {
@@ -171,7 +168,7 @@ function drawBricks() {
 function mouseMove(evt) {
   ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
   paddle.x = evt.clientX - paddle.width / 2;
-  drawPaddle();
+  drawRect(paddle);
 }
 
 function onClick(evt) {
