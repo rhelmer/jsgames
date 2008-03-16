@@ -11,13 +11,16 @@ window.onload = setInterval("mainloop()", 1);
 var canvas = document.getElementById("canvas1");
 var ctx = canvas.getContext('2d');
 
-var total_brick_number = 169;
-var paddle = { color: getColor(), width: 80, height: 20, x: (canvas.width / 2), 
+var total_brick_number = 142;
+var paddle = { color: getColor(), width: 80, height: 20, 
+               x: (canvas.width / 2)+15, 
                y: (canvas.height - 100), speed: 1, type: 'paddle' };
 var ball = { color: getColor(), width: 15, height: 15, x: (canvas.width / 2), 
-             y: (canvas.height - 120), speed: 5, moving: false, 
-             hitPaddle: false,
-             direction_horizontal: "right", direction_vertical: "up" };
+             y: (canvas.height - 120), speed: 2, moving: false, 
+             anglel: 45, angleh: 135 };
+var fpdx = 0;
+var fpdy = -1;
+var left = right = up = down = 0;
 
 ball.collided = function(collidable) {
   left1 = ball.x;
@@ -38,7 +41,7 @@ ball.collided = function(collidable) {
 }
 
 var bricks = new Array();
-y = 0;
+y = 50;
 x = 0;
 for (var i=0; i< total_brick_number; i++) {
   color = getColor();
@@ -58,16 +61,18 @@ function mainloop() {
   if (ball.moving == true) {
     moveBall();
   } else {
-    ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
+    ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
     ball.x = paddle.x + paddle.width / 2;
   }
   drawRect(ball);
   collidables = bricks.concat();
   collidables.push(paddle);
+  hitBrick = false;
   for (var i=0; i < collidables.length; i++) {
     collidable = collidables[i];
     if (ball.collided(collidable)) {
       if (collidable.type == 'brick') {
+        hitBrick = true;
         brick = collidable;
         ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
         for (var j=0; j < bricks.length; j++) {
@@ -75,81 +80,44 @@ function mainloop() {
             bricks.splice(j, 1);
           }
         }
-        ball.hitPaddle = false;
       } else if (collidable.type == 'paddle') {
-        if (ball.hitPaddle) {
-          return;
-        } else {
-          ball.hitPaddle = true;
-        }
-      } else {
-        ball.hitPaddle = false;
-      }
-      if (ball.direction_vertical == 'up') {
-        ball.direction_vertical = 'down';
-      } else if (ball.direction_vertical == 'down') {
-        ball.direction_vertical = 'up';
-      }
-      if (ball.direction_vertical == 'right') {
-        ball.direction_vertical = 'left';
-      } else if (ball.direction_vertical == 'left') {
-        ball.direction_vertical = 'right';
+        ballpos = ball.width + ball.x - paddle.x - 1;
+        ballmax = ball.width + paddle.width - 2;
+        factor = ballpos / ballmax;
+        angle = radians(ball.angleh - factor * (ball.angleh - ball.anglel));
+        fpdx = ball.speed * Math.cos(angle);
+        fpdy = -ball.speed * Math.sin(angle);
       }
     }
   }
+  if (hitBrick) {
+    fpdy = -fpdy;
+  }
 }
+
+function radians(m) { return m * Math.PI / 180.0; }
 
 function moveBall() {
-  ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
-  if (ball.direction_horizontal == 'left') {
-    if (ball.x > 0) {
-      ball.x -= ball.speed;
-    } else {
-      ball.direction_horizontal = 'right';
-      ball.hitPaddle = false;
-    }
+  ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
+  if (ball.x < 0) {
+    fpdx = -fpdx;
   }
-  if (ball.direction_horizontal == 'right') {
-    if ((ball.x + ball.width) < canvas.width) {
-      ball.x += ball.speed;
-    } else {
-      ball.direction_horizontal = 'left';
-      ball.hitPaddle = false;
-    }
+  if ((ball.x + ball.width) >= canvas.width) {
+    fpdx = -fpdx;
   }
-  if (ball.direction_vertical == 'up') {
-    if (ball.y > 0) {
-      ball.y -= ball.speed;
-    } else {
-      ball.direction_vertical = 'down';
-      ball.hitPaddle = false;
-    }
+  if (ball.y <= 0) {
+    fpdy = -fpdy;
   }
-  if (ball.direction_vertical == 'down') {
-    if ((ball.y + ball.height) < canvas.height) {
-      ball.y += ball.speed;
-    } else {
-      ball.hitPaddle = false;
+  if (ball.y >= canvas.height) {
+    console.log('life lost');
+      ball.x = (canvas.width / 2), 
+      ball.y = (canvas.height - 120),
+      ball.speed = 2;
       ball.moving = false;
-      ball.x = (canvas.width / 2);
-      ball.y = (canvas.height - 120);
-      ball.direction_vertical = 'up';
-    }
   }
-}
 
-function movePaddle(direction) {
-  ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
-  if (direction == 'left') {
-    if (paddle.x > 0) {
-      paddle.x -= paddle.speed;
-    }
-  }
-  if (direction == 'right') {
-    if ((paddle.x + paddle.width) < canvas.width) {
-      paddle.x += paddle.speed;
-    }
-  }
+  ball.x = ball.x + fpdx * ball.speed;
+  ball.y = ball.y + fpdy * ball.speed;
 }
 
 function drawRect(obj) {
