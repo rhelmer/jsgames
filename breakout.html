@@ -1,0 +1,177 @@
+<html>
+ <head>
+  <title>Breakout!</title>
+ </head>
+ <body>
+   <canvas id="canvas1" width=600 height=600 style="border-style: solid;">
+   </canvas>
+   <script>
+window.onload = setInterval("mainloop()", 1);
+
+var canvas = document.getElementById("canvas1");
+var ctx = canvas.getContext('2d');
+
+var total_brick_number = 169;
+var paddle = { color: getColor(), width: 80, height: 20, x: (canvas.width / 2), 
+               y: (canvas.height - 100), speed: 25 };
+var ball = { color: getColor(), width: 15, height: 15, x: (canvas.width / 2), 
+             y: (canvas.height - 120), speed: 5, moving: false,
+             direction_horizontal: "right", direction_vertical: "up"};
+
+var bricks = new Array();
+y = 0;
+x = 0;
+for (var i=0; i< total_brick_number; i++) {
+  color = getColor();
+  if (x > canvas.width) {
+    y += 20;
+    x = 0;
+  } 
+  brick = { color: color, width: 50, height: 20, x: x, y: y,
+            id: i, type: "brick" };
+  bricks.push(brick); 
+  x += 50;
+}
+
+function mainloop() {
+  drawPaddle();
+  drawBall();
+  drawBricks();
+  if (ball.moving == true) {
+    moveBall();
+  } else {
+    ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
+    ball.x = paddle.x + paddle.width / 2;
+    drawBall();
+  }
+  if (bricks.length == 0) {
+    ball.moving = false;
+  }
+  // collision detection
+  collidables = bricks.concat();
+  collidables.push(paddle);
+  for (var i=0; i < collidables.length; i++) {
+    collidable = collidables[i];
+    if (ball.x >= collidable.x) {
+      if (ball.x <= (collidable.x + collidable.width)) {
+        if (ball.y == collidable.y) {
+          // collision detected
+          if (collidable.type == 'brick') {
+            brick = collidable;
+            ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
+            for (var j=0; j < bricks.length; j++) {
+              if (brick.id == bricks[j].id) {
+                bricks.splice(j, 1);
+              }
+            }
+          }
+          if (ball.direction_vertical == 'up') {
+            ball.direction_vertical = 'down';
+          } else if (ball.direction_vertical == 'down') {
+            ball.direction_vertical = 'up';
+          }
+        }
+      }
+    }
+  }
+}
+
+function moveBall() {
+  ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
+  if (ball.direction_horizontal == 'left') {
+    if (ball.x > 0) {
+      ball.x -= ball.speed;
+    } else {
+      ball.direction_horizontal = 'right';
+    }
+  }
+  if (ball.direction_horizontal == 'right') {
+    if ((ball.x + ball.width) < canvas.width) {
+      ball.x += ball.speed;
+    } else {
+      ball.direction_horizontal = 'left';
+    }
+  }
+  if (ball.direction_vertical == 'up') {
+    if (ball.y > 0) {
+      ball.y -= ball.speed;
+    } else {
+      ball.direction_vertical = 'down';
+    }
+  }
+  if (ball.direction_vertical == 'down') {
+    if ((ball.y + ball.width) < canvas.width) {
+      ball.y += ball.speed;
+    } else {
+      ball.direction_vertical = 'up';
+    }
+  }
+  drawBall();
+}
+
+function movePaddle(direction) {
+  ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  if (direction == 'left') {
+    if (paddle.x > 0) {
+      paddle.x -= paddle.speed;
+    }
+  }
+  if (direction == 'right') {
+    if ((paddle.x + paddle.width) < canvas.width) {
+      paddle.x += paddle.speed;
+    }
+  }
+  drawPaddle();
+}
+
+function drawPaddle() {
+  ctx.fillStyle = paddle.color;
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+}
+
+function drawBall() {
+  ctx.fillStyle = ball.color;
+  ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+}
+
+function drawBricks() {
+  for (var i=0; i < bricks.length; i++) {
+    brick = bricks[i];
+    ctx.fillStyle = brick.color;
+    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+  }
+}
+
+function keyDown(evt) {
+  if (evt.keyCode == 37) {
+    movePaddle('left');
+  }
+  if (evt.keyCode == 39) {
+    movePaddle('right');
+  }
+}
+
+function mouseMove(evt) {
+  ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  paddle.x = evt.clientX - paddle.width / 2;
+  drawPaddle();
+}
+
+function onClick(evt) {
+  ball.moving = true;
+}
+
+function getColor() {
+  var rgb = [];
+  for (var i=0; i<3; i++) {
+    rgb[i] = Math.round(100 * Math.random() + 25); 
+  }
+  return 'rgb(' + rgb.join(',') + ')';
+}
+
+window.addEventListener('keydown', keyDown, true);
+window.addEventListener('mousemove', mouseMove, true);
+window.addEventListener('click', onClick, true);
+   </script>
+ </body>
+</html>
