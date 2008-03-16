@@ -13,10 +13,29 @@ var ctx = canvas.getContext('2d');
 
 var total_brick_number = 169;
 var paddle = { color: getColor(), width: 80, height: 20, x: (canvas.width / 2), 
-               y: (canvas.height - 100), speed: 25 };
+               y: (canvas.height - 100), speed: 1, type: 'paddle' };
 var ball = { color: getColor(), width: 15, height: 15, x: (canvas.width / 2), 
-             y: (canvas.height - 120), speed: 5, moving: false,
-             direction_horizontal: "right", direction_vertical: "up"};
+             y: (canvas.height - 120), speed: 5, moving: false, 
+             hitPaddle: false,
+             direction_horizontal: "right", direction_vertical: "up" };
+
+ball.collided = function(collidable) {
+  left1 = ball.x;
+  left2 = collidable.x;
+  right1 = ball.x + ball.width;
+  right2 = collidable.x + collidable.width;
+  top1 = ball.y;
+  top2 = collidable.y;
+  bottom1 = ball.y + ball.height;
+  bottom2 = collidable.y + collidable.height;
+
+  if (bottom1 < top2) return false;
+  if (top1 > bottom2) return false;
+  if (right1 < left2) return false;
+  if (left1 > right2) return false;
+
+  return true;
+}
 
 var bricks = new Array();
 y = 0;
@@ -33,44 +52,51 @@ for (var i=0; i< total_brick_number; i++) {
   x += 50;
 }
 
+drawBricks();
 function mainloop() {
+  if (bricks.length == 0) {
+    ball.moving = false;
+  }
   drawPaddle();
-  drawBall();
-  drawBricks();
   if (ball.moving == true) {
     moveBall();
   } else {
     ctx.clearRect(ball.x, ball.y, ball.width, ball.height);
     ball.x = paddle.x + paddle.width / 2;
-    drawBall();
   }
-  if (bricks.length == 0) {
-    ball.moving = false;
-  }
-  // collision detection
+  drawBall();
   collidables = bricks.concat();
   collidables.push(paddle);
   for (var i=0; i < collidables.length; i++) {
     collidable = collidables[i];
-    if (ball.x >= collidable.x) {
-      if (ball.x <= (collidable.x + collidable.width)) {
-        if (ball.y == collidable.y) {
-          // collision detected
-          if (collidable.type == 'brick') {
-            brick = collidable;
-            ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
-            for (var j=0; j < bricks.length; j++) {
-              if (brick.id == bricks[j].id) {
-                bricks.splice(j, 1);
-              }
-            }
-          }
-          if (ball.direction_vertical == 'up') {
-            ball.direction_vertical = 'down';
-          } else if (ball.direction_vertical == 'down') {
-            ball.direction_vertical = 'up';
+    if (ball.collided(collidable)) {
+      if (collidable.type == 'brick') {
+        brick = collidable;
+        ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
+        for (var j=0; j < bricks.length; j++) {
+          if (brick.id == bricks[j].id) {
+            bricks.splice(j, 1);
           }
         }
+        ball.hitPaddle = false;
+      } else if (collidable.type == 'paddle') {
+        if (ball.hitPaddle) {
+          return;
+        } else {
+          ball.hitPaddle = true;
+        }
+      } else {
+        ball.hitPaddle = false;
+      }
+      if (ball.direction_vertical == 'up') {
+        ball.direction_vertical = 'down';
+      } else if (ball.direction_vertical == 'down') {
+        ball.direction_vertical = 'up';
+      }
+      if (ball.direction_vertical == 'right') {
+        ball.direction_vertical = 'left';
+      } else if (ball.direction_vertical == 'left') {
+        ball.direction_vertical = 'right';
       }
     }
   }
@@ -142,15 +168,6 @@ function drawBricks() {
   }
 }
 
-function keyDown(evt) {
-  if (evt.keyCode == 37) {
-    movePaddle('left');
-  }
-  if (evt.keyCode == 39) {
-    movePaddle('right');
-  }
-}
-
 function mouseMove(evt) {
   ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
   paddle.x = evt.clientX - paddle.width / 2;
@@ -169,7 +186,6 @@ function getColor() {
   return 'rgb(' + rgb.join(',') + ')';
 }
 
-window.addEventListener('keydown', keyDown, true);
 window.addEventListener('mousemove', mouseMove, true);
 window.addEventListener('click', onClick, true);
    </script>
