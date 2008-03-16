@@ -1,5 +1,3 @@
-window.onload = setInterval("mainloop()", 1);
-
 var total_brick_number = 142;
 var canvas = document.getElementById("canvas1");
 var ctx = canvas.getContext('2d');
@@ -9,10 +7,7 @@ var paddle = { color: getColor(), width: 80, height: 20,
                y: (canvas.height - 100), speed: 1, type: 'paddle' };
 var ball = { color: getColor(), width: 15, height: 15, x: (canvas.width / 2), 
              y: (canvas.height - 120), speed: 3, moving: false, 
-             anglel: 45, angleh: 135 };
-var fpdx = 0;
-var fpdy = -1;
-var left = right = up = down = 0;
+             anglel: 45, angleh: 135, fpdx: 0, fpdy: -1 };
 
 collided = function(collidable) {
   left1 = this.x;
@@ -34,23 +29,33 @@ collided = function(collidable) {
 
 ball.collided = collided;
 
-var bricks = new Array();
-y = 50;
-x = 0;
-for (var i=0; i< total_brick_number; i++) {
-  color = getColor();
-  if (x > canvas.width) {
-    y += 20;
-    x = 0;
-  } 
-  brick = { color: color, width: 50, height: 20, x: x, y: y,
-            id: i, type: "brick" };
-  bricks.push(brick); 
-  x += 50;
+var bricks = undefined;
+
+function createBricks() {
+  bricks = new Array();
+  y = 50;
+  x = 0;
+  for (var i=0; i< total_brick_number; i++) {
+    color = getColor();
+    if (x > canvas.width) {
+      y += 20;
+      x = 0;
+    } 
+    brick = { color: color, width: 50, height: 20, x: x, y: y,
+              id: i, type: "brick" };
+    bricks.push(brick); 
+    x += 50;
+  }
 }
 
-drawBricks();
+function init() {
+}
+
 function mainloop() {
+  if (bricks == undefined) {
+    createBricks();
+    drawBricks();
+  }
   drawRect(paddle);
   if (ball.moving == true) {
     moveBall();
@@ -59,6 +64,35 @@ function mainloop() {
     ball.x = paddle.x + paddle.width / 2;
   }
   drawRect(ball);
+  checkCollisions();
+}
+
+function radians(m) { return m * Math.PI / 180.0; }
+
+function moveBall() {
+  ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
+  if (ball.x < 0) {
+    ball.fpdx = -ball.fpdx;
+  }
+  if ((ball.x + ball.width) >= canvas.width) {
+    ball.fpdx = -ball.fpdx;
+  }
+  if (ball.y <= 0) {
+    ball.fpdy = -ball.fpdy;
+  }
+  if (ball.y >= canvas.height) {
+    console.log('life lost');
+      ball.x = (canvas.width / 2), 
+      ball.y = (canvas.height - 120),
+      ball.speed = 2;
+      ball.moving = false;
+  }
+
+  ball.x = ball.x + ball.fpdx * ball.speed;
+  ball.y = ball.y + ball.fpdy * ball.speed;
+}
+
+function checkCollisions() {
   collidables = bricks.concat();
   collidables.push(paddle);
   hitBrick = false;
@@ -79,39 +113,14 @@ function mainloop() {
         ballmax = ball.width + paddle.width - 2;
         factor = ballpos / ballmax;
         angle = radians(ball.angleh - factor * (ball.angleh - ball.anglel));
-        fpdx = ball.speed * Math.cos(angle);
-        fpdy = -ball.speed * Math.sin(angle);
+        ball.fpdx = ball.speed * Math.cos(angle);
+        ball.fpdy = -ball.speed * Math.sin(angle);
       }
     }
   }
   if (hitBrick) {
-    fpdy = -fpdy;
+    ball.fpdy = -ball.fpdy;
   }
-}
-
-function radians(m) { return m * Math.PI / 180.0; }
-
-function moveBall() {
-  ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
-  if (ball.x < 0) {
-    fpdx = -fpdx;
-  }
-  if ((ball.x + ball.width) >= canvas.width) {
-    fpdx = -fpdx;
-  }
-  if (ball.y <= 0) {
-    fpdy = -fpdy;
-  }
-  if (ball.y >= canvas.height) {
-    console.log('life lost');
-      ball.x = (canvas.width / 2), 
-      ball.y = (canvas.height - 120),
-      ball.speed = 2;
-      ball.moving = false;
-  }
-
-  ball.x = ball.x + fpdx * ball.speed;
-  ball.y = ball.y + fpdy * ball.speed;
 }
 
 function drawRect(obj) {
@@ -146,3 +155,4 @@ function getColor() {
 
 window.addEventListener('mousemove', mouseMove, true);
 window.addEventListener('click', onClick, true);
+window.onload = setInterval("mainloop()", 1);
