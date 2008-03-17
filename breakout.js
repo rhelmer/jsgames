@@ -1,33 +1,89 @@
-var total_brick_number = 142;
 var canvas = document.getElementById("canvas1");
 var ctx = canvas.getContext('2d');
+var total_brick_number = 142;
 
-var paddle = { color: getColor(), width: 80, height: 20, 
-               x: (canvas.width / 2)+15, 
-               y: (canvas.height - 100), speed: 1, type: 'paddle' };
-var ball = { color: getColor(), width: 15, height: 15, x: (canvas.width / 2), 
-             y: (canvas.height - 120), speed: 3, moving: false, 
-             anglel: 45, angleh: 135, fpdx: 0, fpdy: -1 };
+var paddle = new Sprite(color = getColor(), width = 80, height = 20, 
+  x = (canvas.width / 2)+15, y = (canvas.height - 120), speed = 1);
 
-collided = function(collidable) {
-  left1 = this.x;
-  left2 = collidable.x;
-  right1 = this.x + this.width;
-  right2 = collidable.x + collidable.width;
-  top1 = this.y;
-  top2 = collidable.y;
-  bottom1 = this.y + this.height;
-  bottom2 = collidable.y + collidable.height;
-
-  if (bottom1 < top2) return false;
-  if (top1 > bottom2) return false;
-  if (right1 < left2) return false;
-  if (left1 > right2) return false;
-
-  return true;
+paddle.update = function() {
+  ctx.clearRect(this.x, this.y, this.width, this.height);
+  drawRect(this);
 }
 
-ball.collided = collided;
+var ball = new Sprite(color = getColor(), width = 15, height = 15, 
+ x = (canvas.width / 2), y = (canvas.height - 120)-20, speed = 2,
+ moving = false, angleX = 45, angleY = 135, directionX = 0, directionY = -1);
+
+ball.update = function() {
+  ctx.clearRect(this.x - this.speed, this.y - this.speed, this.width + this.speed + 1, this.height + this.speed + 1);
+
+  if (! this.moving) {
+    ctx.fillStyle = this.color;
+    this.x = paddle.x + paddle.width / 2 - 5;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    return;
+  }
+
+  if (ball.x < 0) {
+    this.directionX = -this.directionX;
+  }
+  if ((this.x + this.width) >= canvas.width) {
+    this.directionX = -this.directionX;
+  }
+  if (ball.y <= 0) {
+    this.directionY = -this.directionY;
+  }
+  if (ball.y >= canvas.height) {
+    console.log('life lost');
+    this.x = (canvas.width / 2), 
+    this.y = (canvas.height - 120) - 20,
+    this.angleX = 45; 
+    this.angleY = 135;
+    this.directionX = 0;
+    this.directionY = -1;
+    this.speed = 2;
+    this.moving = false;
+  }
+
+  this.x = this.x + this.directionX * this.speed;
+  this.y = this.y + this.directionY * this.speed;
+
+  ctx.fillStyle = this.color;
+  ctx.fillRect(this.x, this.y, this.width, this.height);
+}
+
+ball.checkCollisions = function() {
+  removeBricks = new Array();
+  for (var i=0; i < bricks.length; i++) {
+    brick = bricks[i];
+    if (this.collided(brick)) {
+      removeBricks.push(brick);
+      ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
+    }
+  } 
+  if (removeBricks.length > 0) {
+    for (var i=0; i < removeBricks.length; i++) {
+      brick = removeBricks[i];
+      for (var j=0; j < bricks.length; j++) {
+        if (brick.id == bricks[j].id) {
+          bricks.splice(j, 1);
+        }
+      }
+    }
+    // FIXME should detect which side brick was hit
+    // only change direction once
+    this.directionY = -this.directionY;
+  } 
+  if (this.collided(paddle)) {
+    ballpos = this.width + this.x - paddle.x - 1;
+    ballmax = this.width + paddle.width - 2;
+    factor = ballpos / ballmax;
+    angle = radians(this.angleY - factor * (this.angleY - this.angleX));
+    this.directionX = this.speed * Math.cos(angle);
+    this.directionY = -this.speed * Math.sin(angle);
+  }
+}
+
 
 var bricks = undefined;
 
@@ -56,72 +112,14 @@ function mainloop() {
     createBricks();
     drawBricks();
   }
-  drawRect(paddle);
-  if (ball.moving == true) {
-    moveBall();
-  } else {
-    ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
-    ball.x = paddle.x + paddle.width / 2;
-  }
-  drawRect(ball);
-  checkCollisions();
+  paddle.update();
+  ball.update();
+  // FIXME stick to paddle
+  //ball.update();
+  ball.checkCollisions();
 }
 
 function radians(m) { return m * Math.PI / 180.0; }
-
-function moveBall() {
-  ctx.clearRect(ball.x-ball.speed, ball.y-ball.speed, ball.width+ball.speed+1, ball.height+ball.speed+1);
-  if (ball.x < 0) {
-    ball.fpdx = -ball.fpdx;
-  }
-  if ((ball.x + ball.width) >= canvas.width) {
-    ball.fpdx = -ball.fpdx;
-  }
-  if (ball.y <= 0) {
-    ball.fpdy = -ball.fpdy;
-  }
-  if (ball.y >= canvas.height) {
-    console.log('life lost');
-      ball.x = (canvas.width / 2), 
-      ball.y = (canvas.height - 120),
-      ball.speed = 2;
-      ball.moving = false;
-  }
-
-  ball.x = ball.x + ball.fpdx * ball.speed;
-  ball.y = ball.y + ball.fpdy * ball.speed;
-}
-
-function checkCollisions() {
-  collidables = bricks.concat();
-  collidables.push(paddle);
-  hitBrick = false;
-  for (var i=0; i < collidables.length; i++) {
-    collidable = collidables[i];
-    if (ball.collided(collidable)) {
-      if (collidable.type == 'brick') {
-        hitBrick = true;
-        brick = collidable;
-        ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
-        for (var j=0; j < bricks.length; j++) {
-          if (brick.id == bricks[j].id) {
-            bricks.splice(j, 1);
-          }
-        }
-      } else if (collidable.type == 'paddle') {
-        ballpos = ball.width + ball.x - paddle.x - 1;
-        ballmax = ball.width + paddle.width - 2;
-        factor = ballpos / ballmax;
-        angle = radians(ball.angleh - factor * (ball.angleh - ball.anglel));
-        ball.fpdx = ball.speed * Math.cos(angle);
-        ball.fpdy = -ball.speed * Math.sin(angle);
-      }
-    }
-  }
-  if (hitBrick) {
-    ball.fpdy = -ball.fpdy;
-  }
-}
 
 function drawRect(obj) {
   ctx.fillStyle = obj.color;
@@ -138,7 +136,7 @@ function drawBricks() {
 function mouseMove(evt) {
   ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
   paddle.x = evt.clientX - paddle.width / 2;
-  drawRect(paddle);
+  paddle.update();
 }
 
 function onClick(evt) {
