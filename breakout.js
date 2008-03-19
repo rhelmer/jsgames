@@ -114,8 +114,6 @@ function mainloop() {
   }
   paddle.update();
   ball.update();
-  // FIXME stick to paddle
-  //ball.update();
   ball.checkCollisions();
 }
 
