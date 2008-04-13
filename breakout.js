@@ -52,34 +52,38 @@ ball.update = function() {
 }
 
 ball.checkCollisions = function() {
-  removeBricks = new Array();
-  for (var i=0; i < bricks.length; i++) {
-    brick = bricks[i];
-    if (this.collided(brick)) {
-      removeBricks.push(brick);
-      ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
-    }
-  } 
-  if (removeBricks.length > 0) {
-    for (var i=0; i < removeBricks.length; i++) {
-      brick = removeBricks[i];
-      for (var j=0; j < bricks.length; j++) {
-        if (brick.id == bricks[j].id) {
-          bricks.splice(j, 1);
-        }
-      }
-    }
-    // FIXME should detect which side brick was hit
-    // only change direction once
-    this.directionY = -this.directionY;
-  } 
   if (this.collided(paddle)) {
-    ballpos = this.width + this.x - paddle.x - 1;
+    ballpos = this.right - paddle.x - 1;
     ballmax = this.width + paddle.width - 2;
     factor = ballpos / ballmax;
     angle = radians(this.angleY - factor * (this.angleY - this.angleX));
     this.directionX = this.speed * Math.cos(angle);
     this.directionY = -this.speed * Math.sin(angle);
+    return;
+  }
+
+  // We didn't hit the paddle, better see if we hit any bricks
+  removeBricks = new Array();
+  for (var i=0; i < bricks.length; i++) {
+    brick = bricks[i];
+    if (this.collided(brick)) {
+      removeBricks.push(i);
+      ctx.clearRect(brick.x, brick.y, brick.width, brick.height);
+      // Can't ever collide with more than 3 bricks
+      if(removeBricks.length > 2)
+        break;
+    }
+  } 
+
+  var nextIndexToRemove = removeBricks.pop();
+  if(nextIndexToRemove)
+    // FIXME should detect which side brick was hit
+    // only change direction once
+    this.directionY = -this.directionY;
+  
+  while(nextIndexToRemove) {
+    bricks.splice(nextIndexToRemove, 1);
+    nextIndexToRemove = removeBricks.pop();
   }
 }
 
@@ -96,8 +100,9 @@ function createBricks() {
       y += 20;
       x = 0;
     } 
-    brick = { color: color, width: 50, height: 20, x: x, y: y,
-              id: i, type: "brick" };
+    brick = new Sprite(color = color, width = 50, height = 20, x = x, y = y);
+    brick.id = i;
+    brick.type = "brick";
     bricks.push(brick); 
     x += 50;
   }
@@ -131,8 +136,13 @@ function drawBricks() {
 }
 
 function mouseMove(evt) {
+
+  newX = evt.clientX - paddle.width / 2;
+  if(Math.abs(newX - paddle.x) < 20)
+   return; 
+
   ctx.clearRect(paddle.x, paddle.y, paddle.width, paddle.height);
-  paddle.x = evt.clientX - paddle.width / 2;
+  paddle.x = newX;
   paddle.update();
 }
 
@@ -143,7 +153,7 @@ function onClick(evt) {
 function getColor() {
   var rgb = [];
   for (var i=0; i<3; i++) {
-    rgb[i] = Math.round(100 * Math.random() + 25); 
+    rgb[i] = Math.round(200 * Math.random() + 25); 
   }
   return 'rgb(' + rgb.join(',') + ')';
 }
@@ -151,3 +161,4 @@ function getColor() {
 window.addEventListener('mousemove', mouseMove, true);
 window.addEventListener('click', onClick, true);
 window.onload = setInterval("mainloop()", 1);
+

@@ -13,53 +13,71 @@ function Sprite(color, width, height, x, y, speed, moving, angleX, angleY,
   this.directionY = directionY;
 }
 
-Sprite.prototype.getColor = function() {
-  return this.color;
-}
-Sprite.prototype.getWidth = function() {
-  return this.width;
-}
-Sprite.prototype.getHeight = function() {
-  return this.height;
-}
-Sprite.prototype.getX = function() {
-  return this.x;
-}
-Sprite.prototype.getY = function() {
-  return this.y;
-}
-Sprite.prototype.getSpeed = function() {
-  return this.speed;
-}
-Sprite.prototype.isMoving = function() {
+Sprite.prototype = {
+
+ get width() {
+  return this._width;
+ },
+
+ set width(newWidth) {
+  this._width = newWidth;
+  this._right = this.x + newWidth;
+ },
+
+ get height() {
+  return this._height;
+ },
+
+ set height(newHeight) {
+  this._height = newHeight;
+  this._bottom = this.y + newHeight;
+ },
+
+ get x () {
+  return this._x;
+ },
+
+
+ set x (newX) {
+  this._x = newX;
+  this._right = newX + this.width;
+ },
+
+ get y () {
+  return this._y;
+ },
+
+ set y (newY) {
+  this._y = newY;
+  this._bottom = newY + this.height;
+ },
+
+ get left () {
+  return this._x;
+ },
+
+ get right () {
+  return this._right;
+ },
+ 
+ get top () {
+  return this._y;
+ },
+
+ get bottom () {
+  return this._bottom;
+ },
+
+ isMoving : function() {
   return this.moving;
-}
-Sprite.prototype.getAngleX = function() {
-  return this.angleX;
-}
-Sprite.prototype.getAngleY = function() {
-  return this.angleY;
-}
-Sprite.prototype.getDirectionX = function() {
-  return this.directionX;
-}
-Sprite.prototype.getDirectionY = function() {
-  return this.directionY;
-}
-Sprite.prototype.collided = function(collidable) {
-  left1 = this.x;
-  left2 = collidable.x;
-  right1 = this.x + this.width;
-  right2 = collidable.x + collidable.width;
-  top1 = this.y;
-  top2 = collidable.y;
-  bottom1 = this.y + this.height;
-  bottom2 = collidable.y + collidable.height;
+ },
 
-  if (bottom1 < top2) return false;
-  if (top1 > bottom2) return false;
-  if (right1 < left2) return false;
-  if (left1 > right2) return false;
+ collided : function(collidable) {
+  return !(this.left > collidable.right ||
+           this.top > collidable.bottom ||
+           this.bottom < collidable.top ||
+           this.right < collidable.left
+          );
+ }
+};
 
-  return true;
-}
