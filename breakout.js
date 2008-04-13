@@ -34,7 +34,6 @@ ball.update = function() {
     this.directionY = -this.directionY;
   }
   if (ball.y >= canvas.height) {
-    console.log('life lost');
     this.x = (canvas.width / 2), 
     this.y = (canvas.height - 120) - 20,
     this.angleX = 45; 
