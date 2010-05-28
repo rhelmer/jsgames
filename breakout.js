@@ -115,8 +115,8 @@ function mainloop() {
   if (bricks == undefined) {
     createBricks();
     drawBricks();
+    paddle.update();
   }
-  paddle.update();
   ball.update();
   ball.checkCollisions();
 }
