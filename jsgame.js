@@ -73,10 +73,10 @@ Sprite.prototype = {
  },
 
  collided : function(collidable) {
-  return !(this.left > collidable.right ||
-           this.top > collidable.bottom ||
-           this.bottom < collidable.top ||
-           this.right < collidable.left
+  return !(this.left > collidable.right+1 ||
+           this.top > collidable.bottom+1 ||
+           this.bottom < collidable.top-1 ||
+           this.right < collidable.left-1
           );
  }
 };
